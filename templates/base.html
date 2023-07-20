@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/static/images/logo.png" type="image/png">
     <title>CYO AI-venture!</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
     <link rel="stylesheet" href="/static/app.css">
 </head>
-<body>
+<body class="{% block body_class %}{% endblock %}">
     <nav class="navbar navbar-expand">
         <div class="container-fluid">
             <div class="navbar-header">
@@ -20,7 +21,7 @@
                 <li><a href="{{url_for('signup')}}">Sign up</a></li>
                 <li><a href="{{url_for('login')}}">Log in</a></li>
                 {% else %}
-                <li><a href="{{url_for('user_show', id=current_user.get_id())}}"><img src="current_user.image_url" alt="{{current_user.username}}"></a></li>
+                <li><a href="{{url_for('show_user', id=current_user.get_id())}}"><img src="{{current_user.image_url}}" alt="{{current_user.username}}"></a></li>
                 <li><a href="{{url_for('logout')}}">Logout</a></li>
                 {% endif %}
             </ul>

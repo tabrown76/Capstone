@@ -15,6 +15,15 @@ class UniqueUser(object):
         if User.query.filter_by(username=field.data).first():
             raise ValidationError(self.message)
         
+class UniqueEmail(object):
+
+    def __init__(self, message="E-mail already taken."):
+        self.message = message
+
+    def __call__(self, form, field):
+        if User.query.filter_by(email=field.data).first():
+            raise ValidationError(self.message)
+        
 class ComplexPassword(object):
 
         def __init__(self, message="Password must include at least one uppercase letter, one lowercase letter, one number, and one special character."):
@@ -37,7 +46,8 @@ class AddUserForm(FlaskForm):
     first_name = StringField('First Name', validators=[DataRequired()])
     last_name = StringField('Last Name', validators=[DataRequired()])
     email = EmailField('E-mail', validators=[DataRequired(), 
-                                             Email()])
+                                             Email(),
+                                             UniqueEmail()])
     password = PasswordField('Password', validators=[DataRequired(), 
                                                      Length(min=8, message="Password must be at least 8 characters."),
                                                      EqualTo('confirm', message="Passwords must match."),
@@ -53,7 +63,6 @@ class LoginForm(FlaskForm):
 
 class EditUserForm(FlaskForm):
     
-    username = StringField('Username', validators=[DataRequired()])
     first_name = StringField('First Name', validators=[DataRequired()])
     last_name = StringField('Last Name', validators=[DataRequired()])
     email = EmailField('E-mail', validators=[DataRequired(), 
@@ -64,22 +73,22 @@ class EditUserForm(FlaskForm):
     
 class UniquePerUser(object):
 
-    def __init__(self, user, message=None):
-        self.user = user
+    def __init__(self, message=None):
         if not message:
-            message = u'Character already exists.'
+            message = 'Character already exists.'
         self.message = message
 
     def __call__(self, form, field):
-        existing_character = Character.query.filter_by(name=field.data, user_id=self.user.id).first()
-        if existing_character:
-            raise ValidationError(self.message)
+        if current_user.is_authenticated:
+            existing_character = Character.query.filter(Character.name.ilike(field.data), Character.user_id==current_user.id).first()
+            if existing_character and existing_character.name != field.data:
+                raise ValidationError(self.message)
 
 class CharacterForm(FlaskForm):
 
     name = StringField('Character Name', validators=[DataRequired(),
                                                      Length(min=2, max=25),
-                                                     UniquePerUser(lambda: current_user)])
+                                                     UniquePerUser()])
     description = TextAreaField('Description', validators=[DataRequired(),
                                                            Length(max=250)])
     image_url = StringField('(Optional) Character Image URL')

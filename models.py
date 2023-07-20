@@ -1,12 +1,13 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
+from flask_login import UserMixin
 from datetime import datetime
 
 db = SQLAlchemy()
 
 bcrypt = Bcrypt()
 
-class User(db.Model):
+class User(UserMixin, db.Model):
     __tablename__="users"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -14,7 +15,7 @@ class User(db.Model):
     first_name = db.Column(db.Text, nullable=False)
     last_name = db.Column(db.Text, nullable=False)
     email = db.Column(db.Text, nullable=False, unique=True)
-    password_hash = db.Column(db.Text, nullable=False)    
+    password = db.Column(db.Text, nullable=False)    
     image_url = db.Column(db.Text, default="/static/images/default-pic.png")
     created_at = db.Column(db.DateTime, default = datetime.utcnow)
 
@@ -27,19 +28,19 @@ class User(db.Model):
         return f"<User #{self.id}: {self.username}, {self.email}"
     
     @classmethod
-    def signup(cls, username, first_name, last_name, email, password_hash, image_url, created_at):
+    def signup(cls, user_data):
         
-        hashed_pwd = bcrypt.generate_password_hash(password_hash).decode('UTF-8')
+        hashed_pwd = bcrypt.generate_password_hash(user_data['password']).decode('UTF-8')
 
         user = User(
-            username = username,
-            first_name = first_name,
-            last_name = last_name,
-            email = email,
-            password_hash = hashed_pwd,
-            image_url = image_url,
-            created_at = created_at
+            username = user_data['username'],
+            first_name = user_data['first_name'],
+            last_name = user_data['last_name'],
+            email = user_data['email'],
+            password = hashed_pwd
         )
+        if user_data.get('image_url'):
+            user.image_url = user_data['image_url']
 
         db.session.add(user)
         return user
@@ -50,7 +51,7 @@ class User(db.Model):
         user = cls.query.filter_by(username=username).first()
 
         if user:
-            is_auth = bcrypt.check_password_hash(user.password_hash, password)
+            is_auth = bcrypt.check_password_hash(user.password, password)
             if is_auth:
                 return user
         
@@ -123,14 +124,16 @@ class Character(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
 
     @classmethod
-    def create_character(slf, name, description, img_url, created_at):
+    def create_character(slf, character_data, user_id):
 
         character = Character(
-            name = name,
-            description = description,
-            img_url = img_url,
-            created_at = created_at
+            name = character_data['name'],
+            description = character_data['description'],
+            user_id = user_id
         )
+
+        if character_data.get('image_url'):
+            character.img_url = character_data['image_url']
 
         db.session.add(character)
         return character

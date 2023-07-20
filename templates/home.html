@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+
+  <aside class="col-md-4 col-lg-3 col-sm-12" id="home-aside">
+    <div class="card user-card">
+      <div>
+        <div class="image-wrapper">
+          <img src="/static/images/book2.png" alt="" class="card-hero">
+        </div>
+        <a href="{{url_for('show_user', id=current_user.id)}}" class="card-link">
+          <img src="{{current_user.image_url}}"
+               alt="Image for {{current_user.username}}"
+               class="card-image">
+          <p>{{current_user.username}}</p>
+        </a>
+        <ul class="user-stats nav nav-pills">
+          <li class="stat">
+            <p class="small">Stories</p>
+            <h4>
+              <a href="{{url_for('show_user', id=current_user.id)}}">{{current_user.stories | length}}</a>
+            </h4>
+          </li>
+          <li class="stat">
+            <p class="small">Characters</p>
+            <h4>
+              <a href="{{url_for('show_characters', id=current_user.id)}}">{{current_user.characters | length}}</a>
+            </h4>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+  <div class="col-lg-6 col-md-8 col-sm-12">
+    <h4>Let's Make a Story!</h4>
+    <hr>
+    <div class="row justify-content-md-center">
+        <form method="POST" style="list-style-type: none;">
+          {{form.hidden_tag()}}
+          {% for field in form
+            if field.widget.input_type != 'hidden' %}
+          {% for error in field.errors %} 
+          <span class="text-danger">{{error}}</span> 
+          {% endfor %}
+          <div style="list-style-type: none;">
+            <label>{{field.label.text}}</label>
+            {{field}}
+          </div>
+          {% endfor %}
+
+          <div class="edit-btn-area">
+            <button class="btn btn-primary">Select Genres</button>
+          </div>
+        </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
