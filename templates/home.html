@@ -19,39 +19,52 @@
           <li class="stat">
             <p class="small">Stories</p>
             <h4>
-              <a href="{{url_for('show_user', id=current_user.id)}}">{{current_user.stories | length}}</a>
+              <a href="{{url_for('show_stories')}}">{{current_user.stories | length}}</a>
             </h4>
           </li>
           <li class="stat">
             <p class="small">Characters</p>
             <h4>
-              <a href="{{url_for('show_characters', id=current_user.id)}}">{{current_user.characters | length}}</a>
+              <a href="{{url_for('show_characters')}}">{{current_user.characters | length}}</a>
             </h4>
           </li>
         </ul>
       </div>
     </div>
+    
   </aside>
 
   <div class="col-lg-6 col-md-8 col-sm-12">
     <h4>Let's Make a Story!</h4>
     <hr>
     <div class="row justify-content-md-center">
-        <form method="POST" style="list-style-type: none;">
+        <form method="POST" action='/story/generate'class="col-md-6">
           {{form.hidden_tag()}}
+          
           {% for field in form
             if field.widget.input_type != 'hidden' %}
           {% for error in field.errors %} 
           <span class="text-danger">{{error}}</span> 
           {% endfor %}
-          <div style="list-style-type: none;">
-            <label>{{field.label.text}}</label>
+          <div style="display: inline-block">
+            <label>{{field.label.text}}</label> 
             {{field}}
           </div>
           {% endfor %}
-
+          <div style="display: inline-block">
+          <p>Characters</p>
+          {% if characters | length == 0 %}
+          <a href="{{url_for('add_character')}}"><h5>Create</h5></a><h5> a character, to personalize your story!</h5>
+          {% else %}
+          {% for character in characters %}
+          <label style="display: block">
+            <input type="checkbox" name="characters" value="{{character.id}}"> {{character.name}}
+          </label>
+          {% endfor %}
+          {% endif %}
+          </div>
           <div class="edit-btn-area">
-            <button class="btn btn-primary">Select Genres</button>
+            <button class="btn btn-primary">Generate Story!</button>
           </div>
         </form>
     </div>

@@ -24,6 +24,10 @@ body.error-404 {
   margin: 40px;
 }
 
+ul {
+  list-style-type: none;
+}
+
 .btn {
   border-radius: 50px;
 }
@@ -511,6 +515,7 @@ p.card-bio {
 }
 
 .edit-btn-area > .btn {
+  margin: 5px;
   width: 48%;
 }
 

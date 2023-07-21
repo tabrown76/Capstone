@@ -14,13 +14,13 @@
           <li class="stat">
             <p class="small">Stories</p>
             <h4>
-              <a href="{{url_for('show_user', id=current_user.id)}}">{{current_user.stories | length}}</a>
+              <a href="{{url_for('show_stories')}}">{{current_user.stories | length}}</a>
             </h4>
           </li>
           <li class="stat">
             <p class="small">Characters</p>
             <h4>
-              <a href="{{url_for('show_characters', id=current_user.id)}}">{{current_user.characters | length}}</a>
+              <a href="{{url_for('show_characters')}}">{{current_user.characters | length}}</a>
             </h4>
           </li>
           <div class="ml-auto">
@@ -40,4 +40,13 @@
   </div>
 </div>
 
+<div>{{story['title']}}</div>
+<div>{{story['start_content']}}</div>
+
+{% for step in steps %}
+<div class="choice">
+  <p>{{step.content}}</p>
+  <button class="btn btn-outline-secondary btn-sm btn-block">Choose</button>
+</div>
+{% endfor %}
 {% endblock %}

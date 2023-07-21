@@ -2,6 +2,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_login import UserMixin
 from datetime import datetime
+from flask_login import current_user
 
 db = SQLAlchemy()
 
@@ -19,10 +20,10 @@ class User(UserMixin, db.Model):
     image_url = db.Column(db.Text, default="/static/images/default-pic.png")
     created_at = db.Column(db.DateTime, default = datetime.utcnow)
 
-    stories = db.relationship('Story', backref='author')
-    characters = db.relationship('Character', backref='user')
-    user_genres = db.relationship('UserGenre', backref='user')
-    chatgpt_sessions = db.relationship('ChatGPTSession', backref='user')
+    stories = db.relationship('Story', backref='author', cascade="all, delete-orphan")
+    characters = db.relationship('Character', backref='user', cascade="all, delete-orphan")
+    user_genres = db.relationship('UserGenre', backref='user', cascade="all, delete-orphan")
+    chatgpt_sessions = db.relationship('ChatGPTSession', backref='user', cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<User #{self.id}: {self.username}, {self.email}"
@@ -65,22 +66,27 @@ class Story(db.Model):
     start_content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)
+    img_url = db.Column(db.Text, default='/static/images/library3.png')
 
-    author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    character_id = db.Column(db.Integer, db.ForeignKey('characters.id'))
+    author_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'))
+    character_id = db.Column(db.Integer, db.ForeignKey('characters.id', ondelete='CASCADE'))
 
-    story_steps = db.relationship('StoryStep', backref='story')
+    story_steps = db.relationship('StoryStep', backref='story', cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f"Story #{self.id}, {self.title}, {self.author_id}"
 
     @classmethod
-    def create_story(cls, title, start_content, created_at):
+    def create_story(cls, title, start_content, author_id):
 
         story = Story(
             title = title,
             start_content = start_content,
-            created_at = created_at
+            author_id = author_id
         )
         
         db.session.add(story)
+        db.session.commit()
         return story
 
 
@@ -91,7 +97,7 @@ class StoryStep(db.Model):
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    story_id = db.Column(db.Integer, db.ForeignKey('stories.id'))
+    story_id = db.Column(db.Integer, db.ForeignKey('stories.id', ondelete='CASCADE'))
 
 class Choice(db.Model):
     __tablename__ = 'choices'
@@ -100,9 +106,9 @@ class Choice(db.Model):
     choice_text = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    from_step_id = db.Column(db.Integer, db.ForeignKey('story_steps.id'))
-    to_step_id = db.Column(db.Integer, db.ForeignKey('story_steps.id'))
-    genre_id = db.Column(db.Integer, db.ForeignKey('genres.id'))
+    from_step_id = db.Column(db.Integer, db.ForeignKey('story_steps.id', ondelete='CASCADE'))
+    to_step_id = db.Column(db.Integer, db.ForeignKey('story_steps.id', ondelete='CASCADE'))
+    genre_id = db.Column(db.Integer, db.ForeignKey('genres.id', ondelete='CASCADE'))
 
 class Genre(db.Model):
     __tablename__ = 'genres'
@@ -110,7 +116,7 @@ class Genre(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.Text, nullable=False)
 
-    user_genres = db.relationship('UserGenre', backref='genre')
+    user_genres = db.relationship('UserGenre', backref='genre', cascade="all, delete-orphan")
 
 class Character(db.Model):
     __tablename__ = 'characters'
@@ -121,7 +127,10 @@ class Character(db.Model):
     img_url = db.Column(db.Text, default="/static/images/default-pic.png")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'))
+
+    def __repr__(self):
+        return f"Character# {self.id}, {self.name}"
 
     @classmethod
     def create_character(slf, character_data, user_id):
@@ -141,8 +150,8 @@ class Character(db.Model):
 class UserGenre(db.Model):
     __tablename__ = 'user_genres'
 
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
-    genre_id = db.Column(db.Integer, db.ForeignKey('genres.id'), primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), primary_key=True)
+    genre_id = db.Column(db.Integer, db.ForeignKey('genres.id', ondelete='CASCADE'), primary_key=True)
 
     count = db.Column(db.Integer, default=0)
 
@@ -167,8 +176,8 @@ class ChatGPTSession(db.Model):
     session_id = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    story_id = db.Column(db.Integer, db.ForeignKey('stories.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'))
+    story_id = db.Column(db.Integer, db.ForeignKey('stories.id', ondelete='CASCADE'))
 
 def connect_db(app):
     """Connect to database."""

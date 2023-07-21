@@ -93,10 +93,28 @@ class CharacterForm(FlaskForm):
                                                            Length(max=250)])
     image_url = StringField('(Optional) Character Image URL')
 
+class GenreLimit(object):
+
+    def __init__(self, message=None):
+        if not message:
+            message = 'Please select up to 3 genres.'
+        self.message = message
+
+    def __call__(self, form, field):
+        if len(field.data) > 3:
+            raise ValidationError(self.message)
+
 class GenreForm(FlaskForm):
 
-    genres = SelectMultipleField('Genres',
+    genres = SelectMultipleField('Genres (Select up to 3)',
                                  choices = [],
                                  widget=ListWidget(prefix_label=False),
                                  option_widget=CheckboxInput(),
-                                 coerce=int)
+                                 coerce=int,
+                                 validators=[GenreLimit()])
+
+class EditStoryForm(FlaskForm):
+
+    title = StringField('Title', validators=[DataRequired(),
+                                             Length(min=2, max=50)])
+    img_url = StringField('(Optional) Cover Image URL')
