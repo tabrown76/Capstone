@@ -294,6 +294,15 @@ class ChatGPTSession(db.Model):
     A ChatGPTSession has an id, session id, timestamp of creation, and foreign keys linking it to a user and a story.
     """
 
+    __tablename__= 'chatgpt_sessions'
+
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'))
+    story_id = db.Column(db.Integer, db.ForeignKey('stories.id', ondelete='CASCADE'))
+    
 def connect_db(app):
     """
     Connects the application to the database.
