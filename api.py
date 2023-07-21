@@ -1,8 +1,7 @@
 from models import db, Genre, Character, Story, StoryStep
 from flask_login import current_user
-import openai
+import openai   
 import os
-import re
 
 def create_prompt(selected_genres, selected_characters):
 
@@ -20,8 +19,8 @@ def make_api_request(prompt):
         model="gpt-3.5-turbo",
         messages=[
             {"role": "system", "content": "You are a children's storyteller, creating a choose your own adventure story."},
-            {"role": "system", "content": "Please return a succinct title labeled as [title], the body of the story labeled as [start_content], and exactly two short (ie. Go in Cave, or Go to Beach) choices each labeled exactly as [choice_text] with one choice each."},
-            {"role": "system", "content": "After providing choices, stop the story."},
+            {"role": "system", "content": "Please return a succinct title labeled as [title], the body of the story labeled as [start_content], and exactly two short (ie. Go in Cave, or Go to Beach) choices each labeled exactly as [choice_text] with one choice each. All labels lower-case."},
+            {"role": "system", "content": "After providing choices, stop the story. Do not provide summarization of choices."},
             {"role": "user", "content": prompt}
         ]
     )

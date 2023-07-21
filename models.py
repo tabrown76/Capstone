@@ -9,6 +9,17 @@ db = SQLAlchemy()
 bcrypt = Bcrypt()
 
 class User(UserMixin, db.Model):
+    """
+    Database model for users.
+
+    A user has an id, username, first name, last name, email, password, 
+    an optional profile image URL, a timestamp of account creation, 
+    and relationships to other tables, including Story, Character, UserGenre, 
+    and ChatGPTSession.
+
+    The User class includes methods for user signup and authentication.
+    """
+    
     __tablename__="users"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -30,6 +41,18 @@ class User(UserMixin, db.Model):
     
     @classmethod
     def signup(cls, user_data):
+        """
+        Sign up a new user.
+
+        Hashes the password and saves the user to the database.
+
+        Parameters:
+            user_data (dict): User information including username, first name, last name, 
+                              email, and password. It may optionally include an image_url.
+
+        Returns:
+            User: The newly created User object.
+        """
         
         hashed_pwd = bcrypt.generate_password_hash(user_data['password']).decode('UTF-8')
 
@@ -48,6 +71,18 @@ class User(UserMixin, db.Model):
     
     @classmethod
     def authenticate(cls, username, password):
+        """
+        Authenticate a user.
+
+        Checks the entered password against the hashed password in the database.
+
+        Parameters:
+            username (str): The user's username.
+            password (str): The user's password.
+
+        Returns:
+            User|bool: The authenticated User object if authentication is successful; False otherwise.
+        """
 
         user = cls.query.filter_by(username=username).first()
 
@@ -59,6 +94,15 @@ class User(UserMixin, db.Model):
         return False
 
 class Story(db.Model):
+    """
+    Database model for stories.
+
+    A story has an id, title, starting content, timestamps of creation, update, and access,
+    an optional cover image URL, and relationships to other tables, including StoryStep.
+
+    The Story class includes a classmethod for creating a story.
+    """
+
     __tablename__ = 'stories'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -66,6 +110,7 @@ class Story(db.Model):
     start_content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)
+    accessed_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     img_url = db.Column(db.Text, default='/static/images/library3.png')
 
     author_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'))
@@ -78,6 +123,19 @@ class Story(db.Model):
 
     @classmethod
     def create_story(cls, title, start_content, author_id):
+        """
+        Create a new story.
+
+        Saves the new story to the database.
+
+        Parameters:
+            title (str): The story's title.
+            start_content (str): The starting content for the story.
+            author_id (int): The ID of the author of the story.
+
+        Returns:
+            Story: The newly created Story object.
+        """
 
         story = Story(
             title = title,
@@ -91,6 +149,12 @@ class Story(db.Model):
 
 
 class StoryStep(db.Model):
+    """
+    Database model for steps within a story.
+
+    A story step has an id, content, timestamp of creation, and a foreign key linking it to a story.
+    """
+
     __tablename__ = 'story_steps'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -100,6 +164,12 @@ class StoryStep(db.Model):
     story_id = db.Column(db.Integer, db.ForeignKey('stories.id', ondelete='CASCADE'))
 
 class Choice(db.Model):
+    """
+    Database model for choices within a story.
+
+    A choice has an id, choice text, timestamp of creation, and foreign keys linking it to a story step and a genre.
+    """
+
     __tablename__ = 'choices'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -111,6 +181,12 @@ class Choice(db.Model):
     genre_id = db.Column(db.Integer, db.ForeignKey('genres.id', ondelete='CASCADE'))
 
 class Genre(db.Model):
+    """
+    Database model for genres.
+
+    A genre has an id, name, and a relationship to the UserGenre table.
+    """
+
     __tablename__ = 'genres'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -119,6 +195,14 @@ class Genre(db.Model):
     user_genres = db.relationship('UserGenre', backref='genre', cascade="all, delete-orphan")
 
 class Character(db.Model):
+    """
+    Database model for characters.
+
+    A character has an id, name, description, an optional image URL, timestamp of creation, and a foreign key linking it to a user.
+
+    The Character class includes a classmethod for creating a character.
+    """
+
     __tablename__ = 'characters'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -134,6 +218,19 @@ class Character(db.Model):
 
     @classmethod
     def create_character(slf, character_data, user_id):
+        """
+        Create a new character.
+
+        Saves the new character to the database.
+
+        Parameters:
+            character_data (dict): Character information including name and description. 
+                                   It may optionally include an image_url.
+            user_id (int): The ID of the user who created the character.
+
+        Returns:
+            Character: The newly created Character object.
+        """
 
         character = Character(
             name = character_data['name'],
@@ -148,6 +245,14 @@ class Character(db.Model):
         return character
 
 class UserGenre(db.Model):
+    """
+    Database model for user's preferred genres.
+
+    UserGenre has two primary keys: user_id and genre_id, and a count for the number of times a user selects a particular genre.
+
+    The UserGenre class includes a classmethod for incrementing the count of a genre for a user.
+    """
+
     __tablename__ = 'user_genres'
 
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), primary_key=True)
@@ -157,6 +262,19 @@ class UserGenre(db.Model):
 
     @classmethod
     def increment_count(cls, user_id, genre_id):
+        """
+        Increment the genre count for a user.
+
+        If the user has not selected the genre before, a new record is created in the database with a count of 1.
+        If the user has selected the genre before, the existing count is incremented.
+
+        Parameters:
+            user_id (int): The ID of the user.
+            genre_id (int): The ID of the genre.
+
+        Returns:
+            UserGenre: The updated UserGenre object.
+        """
 
         user_genre = cls.query.filter_by(user_id=user_id, genre_id=genre_id).first()
 
@@ -170,6 +288,20 @@ class UserGenre(db.Model):
         return user_genre
 
 class ChatGPTSession(db.Model):
+    """
+    Database model for ChatGPT sessions.
+
+    A ChatGPTSession has an id, session id, timestamp of creation, and foreign keys linking it to a user and a story.
+    """
+
+def connect_db(app):
+    """
+    Connects the application to the database.
+
+    Parameters:
+        app (Flask app): The Flask application to connect to the database.
+    """
+
     __tablename__= 'chatgpt_sessions'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -180,7 +312,12 @@ class ChatGPTSession(db.Model):
     story_id = db.Column(db.Integer, db.ForeignKey('stories.id', ondelete='CASCADE'))
 
 def connect_db(app):
-    """Connect to database."""
+    """
+    Connects the application to the database.
+
+    Parameters:
+        app (Flask app): The Flask application to connect to the database.
+    """
 
     db.app = app
     db.init_app(app)
