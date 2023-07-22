@@ -1,8 +1,8 @@
 from flask import Flask, render_template, redirect, url_for, request, flash
 from flask_login import LoginManager, login_required, current_user, logout_user, login_user
-from models import db, connect_db, User, Story, StoryStep, Choice, Genre, Character, UserGenre, ChatGPTSession
+from models import db, connect_db, User, Story, StoryStep, Choice, Genre, Character, UserGenre
 from forms import AddUserForm, LoginForm, EditUserForm, GenreForm, CharacterForm, EditStoryForm
-from api import create_prompt, make_api_request
+from apicalls import make_api_request, next_step
 from sqlalchemy import func
 from werkzeug.exceptions import HTTPException
 from datetime import datetime
@@ -404,7 +404,7 @@ def show_stories():
         of all stories associated with the current user.
     """
 
-    stories = Story.query.filter_by(author_id=current_user.id).all()
+    stories = Story.query.filter_by(author_id=current_user.id).order_by((Story.created_at).desc()).all()
 
     return render_template('/stories/index.html', stories=stories)
 
@@ -517,8 +517,7 @@ def generate_story():
             for genre in genres:
                 UserGenre.increment_count(user_id=current_user.id, genre_id=genre.id)
 
-            prompt = create_prompt(selected_genres, selected_characters)
-            make_api_request(prompt)
+            make_api_request(selected_genres, selected_characters)
 
             return redirect(url_for('show_user', id=current_user.id))
     
@@ -559,3 +558,42 @@ def show_story(id):
     else:
         flash("You do not have permission to view this page.", "danger")
         return redirect(url_for('homepage'))
+    
+@app.route('/story/continue/<int:id>', methods=["POST"])
+@login_required
+def continue_story(id):
+
+    story = Story.query.get_or_404(id)
+
+    if story.author_id != current_user.id:
+        flash("You do not have permission to continue this story.", "danger")
+        return redirect(url_for('homepage'))
+
+    if request.method == "POST":
+    
+        step_id = request.form.get('step_id')
+        step = StoryStep.query.get(step_id)
+
+        new_choice = Choice(choice_text=step.content, from_step_id=step_id)
+        db.session.add(new_choice)
+        db.session.commit()
+
+        new_story = next_step(id, new_choice)
+
+        new_choice.to_story_id = new_story.id
+        db.session.commit()
+
+        return redirect(url_for('show_user', id=current_user.id))
+    
+    else:
+        flash("You do not have permission to view this page.", "danger")
+        return redirect(url_for('homepage'))
+    
+@app.route('/story/read/<int:id>')
+@login_required
+def read_story(id):
+
+    start_id = Story.get_start_step_id(id)
+    steps = Story.get_story_sequence(start_id)
+
+    return render_template('/stories/read.html', steps=steps)

@@ -40,13 +40,20 @@
   </div>
 </div>
 
-<div>{{story['title']}}</div>
-<div>{{story['start_content']}}</div>
-
-{% for step in steps %}
-<div class="choice">
-  <p>{{step.content}}</p>
-  <button class="btn btn-outline-secondary btn-sm btn-block">Choose</button>
-</div>
+<div class="row">{{story.title}}</div>
+<div class="row">{{story.start_content}}</div>
+<hr>
+{% if story.end %}
+<h2>The End</h2>
+{% else %}
+  {% for step in steps %}
+  <div class="row">
+    <form method="POST" action="{{url_for('continue_story', id=story.id)}}">
+      <input type="hidden" name="step_id" value="{{step.id}}">
+      <p>{{step.content}}</p>
+      <button type="submit" class="btn btn-outline-secondary btn-sm btn-block">Choose</button>
+    </form>
+  </div>
 {% endfor %}
+{% endif %}
 {% endblock %}

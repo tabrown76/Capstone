@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<hr>
+{% for step in steps %}
+{{step.content}}
+{% endfor %}
+{% endblock %}

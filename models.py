@@ -2,11 +2,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_login import UserMixin
 from datetime import datetime
-from flask_login import current_user
 
 db = SQLAlchemy()
-
-bcrypt = Bcrypt()
 
 class User(UserMixin, db.Model):
     """
@@ -21,6 +18,9 @@ class User(UserMixin, db.Model):
     """
     
     __tablename__="users"
+
+    
+    bcrypt = Bcrypt()
 
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.Text, nullable=False, unique=True)
@@ -54,7 +54,7 @@ class User(UserMixin, db.Model):
             User: The newly created User object.
         """
         
-        hashed_pwd = bcrypt.generate_password_hash(user_data['password']).decode('UTF-8')
+        hashed_pwd = cls.bcrypt.generate_password_hash(user_data['password']).decode('UTF-8')
 
         user = User(
             username = user_data['username'],
@@ -87,7 +87,7 @@ class User(UserMixin, db.Model):
         user = cls.query.filter_by(username=username).first()
 
         if user:
-            is_auth = bcrypt.check_password_hash(user.password, password)
+            is_auth = cls.bcrypt.check_password_hash(user.password, password)
             if is_auth:
                 return user
         
@@ -112,17 +112,19 @@ class Story(db.Model):
     updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)
     accessed_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     img_url = db.Column(db.Text, default='/static/images/library3.png')
+    end = db.Column(db.Boolean, default=False)
 
     author_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'))
-    character_id = db.Column(db.Integer, db.ForeignKey('characters.id', ondelete='CASCADE'))
 
     story_steps = db.relationship('StoryStep', backref='story', cascade="all, delete-orphan")
+    characters = db.relationship('StoryCharacters', backref='story', cascade="all, delete-orphan", passive_deletes=True)
+    choices = db.relationship("Choice", back_populates="story")
 
     def __repr__(self):
         return f"Story #{self.id}, {self.title}, {self.author_id}"
 
     @classmethod
-    def create_story(cls, title, start_content, author_id):
+    def create_story(cls, title, start_content, author_id, end=False):
         """
         Create a new story.
 
@@ -140,13 +142,101 @@ class Story(db.Model):
         story = Story(
             title = title,
             start_content = start_content,
-            author_id = author_id
+            author_id = author_id,
+            end = end
         )
         
         db.session.add(story)
         db.session.commit()
         return story
 
+    @classmethod
+    def get_start_step_id(cls, story_id):
+        """
+        Get the sequence of story steps for a given story ID.
+
+        This method identifies the starting step of a story (the one without any incoming choices),
+        and returns its ID. If no starting step can be found, it raises a ValueError.
+
+        Args:
+            cls (Class): The class that this method is a part of.
+            story_id (int): The ID of the story to get the steps from.
+
+        Returns:
+            int: The ID of the starting step of the story.
+
+        Raises:
+            ValueError: If no starting step can be found for the given story.
+        """
+
+        story = cls.query.get(story_id)
+
+        for step in story.story_steps:
+            if not step.choices_to:
+                return step.id
+        
+        raise ValueError(f'No start step found for story {story.title}')
+
+    @classmethod
+    def get_story_sequence(cls, start_story_id):
+        """
+        Retrieves the sequence of steps within a story starting from a specific step.
+
+        This method starts at the given story step, then iteratively follows the "choices" relationships
+        to gather a sequence of story steps. The sequence ends when a step has no further choices.
+
+        Parameters:
+            start_step_id (int): The ID of the starting story step.
+
+        Returns:
+            list: A list of StoryStep objects representing the sequence of steps in the story from the 
+                  starting step to the last step that doesn't have any further choices.
+        """
+        
+        current_story = cls.query.get(start_story_id)
+
+        sequence = [current_story]
+
+        while True:
+            current_step = current_story.story_steps[0]
+            print(f'current step: {current_step}')
+            if not current_step:
+                break
+
+            choice = current_step.choices_to[0]
+            print(f'chioce: {choice}')
+            if not choice:
+                break
+
+            next_story = choice.to_story
+            print(f'next story: {next_story}')
+            if not next_story:
+                break
+
+            sequence.append(next_story)
+
+            current_story = next_story
+
+        return sequence
+
+class Choice(db.Model):
+    """
+    Database model for choices within a story.
+
+    A choice has an id, choice text, timestamp of creation, and foreign keys linking it to a story step and a genre.
+    """
+
+    __tablename__ = 'choices'
+
+    id = db.Column(db.Integer, primary_key=True)
+    choice_text = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    story_id = db.Column(db.Integer, db.ForeignKey('stories.id', ondelete='CASCADE'))
+    from_step_id = db.Column(db.Integer, db.ForeignKey('story_steps.id', ondelete='CASCADE'))
+    to_story_id = db.Column(db.Integer, db.ForeignKey('story_steps.id', ondelete='CASCADE'))
+
+    story = db.relationship("Story", back_populates="choices")
 
 class StoryStep(db.Model):
     """
@@ -162,23 +252,15 @@ class StoryStep(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     story_id = db.Column(db.Integer, db.ForeignKey('stories.id', ondelete='CASCADE'))
-
-class Choice(db.Model):
-    """
-    Database model for choices within a story.
-
-    A choice has an id, choice text, timestamp of creation, and foreign keys linking it to a story step and a genre.
-    """
-
-    __tablename__ = 'choices'
-
-    id = db.Column(db.Integer, primary_key=True)
-    choice_text = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-    from_step_id = db.Column(db.Integer, db.ForeignKey('story_steps.id', ondelete='CASCADE'))
-    to_step_id = db.Column(db.Integer, db.ForeignKey('story_steps.id', ondelete='CASCADE'))
-    genre_id = db.Column(db.Integer, db.ForeignKey('genres.id', ondelete='CASCADE'))
+    choices_from = db.relationship('Choice', backref='from_step',
+                                   cascade="all, delete-orphan",
+                                   primaryjoin='Choice.from_step_id==StoryStep.id')
+    choices_to = db.relationship('Choice', backref='to_story',
+                                 cascade='all, delete-orphan',
+                                 primaryjoin='Choice.to_story_id==StoryStep.id')
+    
+    def __repr__(self):
+        return f"content: {self.content}, story.id: {self.story_id}"
 
 class Genre(db.Model):
     """
@@ -193,6 +275,18 @@ class Genre(db.Model):
     name = db.Column(db.Text, nullable=False)
 
     user_genres = db.relationship('UserGenre', backref='genre', cascade="all, delete-orphan")
+
+class StoryCharacters(db.Model):
+    """
+    Database model for characters in stories.
+    
+    A story_characters has an id, a story id, and a character id.
+    """
+    __tablename__ = 'story_characters'
+
+    id = db.Column(db.Integer, primary_key=True)
+    story_id = db.Column(db.Integer, db.ForeignKey('stories.id', ondelete='CASCADE'))
+    character_id = db.Column(db.Integer, db.ForeignKey('characters.id', ondelete='CASCADE'))
 
 class Character(db.Model):
     """
@@ -212,6 +306,8 @@ class Character(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'))
+
+    stories = db.relationship('StoryCharacters', backref='character', cascade="all, delete-orphan", passive_deletes=True)
 
     def __repr__(self):
         return f"Character# {self.id}, {self.name}"
@@ -292,23 +388,6 @@ class ChatGPTSession(db.Model):
     Database model for ChatGPT sessions.
 
     A ChatGPTSession has an id, session id, timestamp of creation, and foreign keys linking it to a user and a story.
-    """
-
-    __tablename__= 'chatgpt_sessions'
-
-    id = db.Column(db.Integer, primary_key=True)
-    session_id = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'))
-    story_id = db.Column(db.Integer, db.ForeignKey('stories.id', ondelete='CASCADE'))
-    
-def connect_db(app):
-    """
-    Connects the application to the database.
-
-    Parameters:
-        app (Flask app): The Flask application to connect to the database.
     """
 
     __tablename__= 'chatgpt_sessions'
