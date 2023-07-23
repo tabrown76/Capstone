@@ -151,73 +151,40 @@ class Story(db.Model):
         return story
 
     @classmethod
-    def get_start_step_id(cls, story_id):
+    def get_story_chain(cls, id):
         """
-        Get the sequence of story steps for a given story ID.
+        Retrieves the chain of stories starting from the specified story.
 
-        This method identifies the starting step of a story (the one without any incoming choices),
-        and returns its ID. If no starting step can be found, it raises a ValueError.
+        This method starts at the given story and then iteratively follows the choices to gather 
+        a chain of stories. The chain ends when a story has no further choices that lead to it.
 
         Args:
             cls (Class): The class that this method is a part of.
-            story_id (int): The ID of the story to get the steps from.
+            id (int): The ID of the story to start the search from.
 
         Returns:
-            int: The ID of the starting step of the story.
-
-        Raises:
-            ValueError: If no starting step can be found for the given story.
+            list: A list of Story objects representing the chain of stories.
         """
+        story = cls.query.get(id)
+        if not story:
+            raise ValueError(f"Story with id {id} not found")
 
-        story = cls.query.get(story_id)
-
-        for step in story.story_steps:
-            if not step.choices_to:
-                return step.id
-        
-        raise ValueError(f'No start step found for story {story.title}')
-
-    @classmethod
-    def get_story_sequence(cls, start_story_id):
-        """
-        Retrieves the sequence of steps within a story starting from a specific step.
-
-        This method starts at the given story step, then iteratively follows the "choices" relationships
-        to gather a sequence of story steps. The sequence ends when a step has no further choices.
-
-        Parameters:
-            start_step_id (int): The ID of the starting story step.
-
-        Returns:
-            list: A list of StoryStep objects representing the sequence of steps in the story from the 
-                  starting step to the last step that doesn't have any further choices.
-        """
-        
-        current_story = cls.query.get(start_story_id)
-
-        sequence = [current_story]
+        chain = [story]
 
         while True:
-            current_step = current_story.story_steps[0]
-            print(f'current step: {current_step}')
-            if not current_step:
-                break
-
-            choice = current_step.choices_to[0]
-            print(f'chioce: {choice}')
+            choice = Choice.query.filter_by(to_story_id=story.id).first()
             if not choice:
-                break
+                return chain
 
-            next_story = choice.to_story
-            print(f'next story: {next_story}')
-            if not next_story:
-                break
+            step = choice.from_step
+            if not step:
+                raise ValueError(f"Step for choice with id {choice.id} not found")
 
-            sequence.append(next_story)
+            story = step.story
+            if not story:
+                raise ValueError(f"Story for step with id {step.id} not found")
 
-            current_story = next_story
-
-        return sequence
+            chain.insert(0, story)
 
 class Choice(db.Model):
     """

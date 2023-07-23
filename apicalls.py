@@ -6,6 +6,21 @@ import os
 openai.api_key = os.getenv('OPENAI_API_KEY')
 
 def make_api_request(selected_genres, selected_characters):
+    """
+    Use OpenAI's GPT-3.5-turbo model to generate a new story based on selected genres and characters.
+
+    This function sends a request to the OpenAI API to generate a new story with selected genres and characters.
+    It then splits the received response into parts: title, start_content, and choices. It creates a new story 
+    and related story steps in the database based on these parts. In addition, it creates new story character 
+    associations for the selected characters.
+
+    Args:
+        selected_genres (list): A list of genre IDs selected for the story.
+        selected_characters (list): A list of character IDs selected for the story.
+
+    Returns:
+        Story: A new story instance created based on the generated content.
+    """
 
     genre_ids = [Genre.query.get(id) for id in selected_genres]
     genres = [genre.name for genre in genre_ids]
@@ -52,6 +67,21 @@ def make_api_request(selected_genres, selected_characters):
     return new_story
 
 def next_step(id, new_choice):
+    """
+    Use OpenAI's GPT-3.5-turbo model to continue an existing story based on a selected choice.
+
+    This function sends a request to the OpenAI API to generate the continuation of a story based on the 
+    initial story content and a selected choice. The received response is then used to either end the current 
+    story or create new story steps, based on the received tags in the response. A new story is created in the 
+    database based on this new content.
+
+    Args:
+        id (int): The ID of the initial story to be continued.
+        new_choice (Choice): The choice instance selected to continue the story.
+
+    Returns:
+        Story: A new story instance created based on the generated content.
+    """
 
     story = Story.query.get_or_404(id)
     choice = Choice.query.get_or_404(new_choice.id)

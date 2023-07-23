@@ -562,6 +562,27 @@ def show_story(id):
 @app.route('/story/continue/<int:id>', methods=["POST"])
 @login_required
 def continue_story(id):
+    """
+    Handle the process of continuing a story by adding new steps.
+
+    This function manages POST requests to the '/story/continue/<id>' route. It checks if the user 
+    has the permission to continue the story (based on the story's author_id). If the user is the 
+    author, it adds a new choice to the story using the selected story step's content, commits 
+    the choice to the database, and uses the 'next_step' function to determine the new story. 
+    The user is then redirected to their user detail page where the updated story can be viewed.
+    
+    If the story was not authored by the current user or the request method is not "POST", the function 
+    redirects the user to the homepage with an error message.
+
+    Note that this route requires the user to be logged in, as enforced by the '@login_required' decorator.
+
+    Args:
+        id (int): The ID of the story to be continued.
+
+    Returns:
+        Werkzeug Response: A redirect to the user detail page if the story was continued successfully,
+        or a redirect to the homepage with an error message otherwise.
+    """
 
     story = Story.query.get_or_404(id)
 
@@ -592,8 +613,23 @@ def continue_story(id):
 @app.route('/story/read/<int:id>')
 @login_required
 def read_story(id):
+    """
+    Display the sequence of a story starting from a specified story.
 
-    start_id = Story.get_start_step_id(id)
-    steps = Story.get_story_sequence(start_id)
+    This function uses the 'get_story_chain' method of the Story model to fetch the chain of stories 
+    starting from and including the specified story. It then renders a template with the sequence 
+    of stories (referred to as a 'chain').
 
-    return render_template('/stories/read.html', steps=steps)
+    Note that this route requires the user to be logged in, as enforced by the '@login_required' decorator.
+
+    Args:
+        id (int): The ID of the story from which to start fetching the chain.
+
+    Returns:
+        Werkzeug Response: The rendered template for the '/stories/read.html' page with the 
+        chain of stories.
+    """
+
+    chain = Story.get_story_chain(id)
+
+    return render_template('/stories/read.html', chain=chain)
