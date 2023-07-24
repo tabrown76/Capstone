@@ -8,7 +8,6 @@ from werkzeug.exceptions import HTTPException
 from datetime import datetime
 import os
 import openai
-import config
 
 app = Flask (__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql:///ai_venture"
