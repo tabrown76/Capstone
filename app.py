@@ -256,17 +256,14 @@ def edit_user():
 
                 return redirect(url_for('homepage'))
             
-            try:
+            if request.form['submit-btn'] == 'update':
+
                 user_data = {field.name: field.data for field in form if field.name not in ['username', 'password']}
                 for field, value in user_data.items():
                     setattr(user, field, value)
                 db.session.commit()  
-                flash("Profile updated!", "info")      
 
-                return redirect(url_for('show_user', id=current_user.id))
-            except Exception as e:
-                print(e)
-                flash("Unable to update profiles at this time.", "info")
+                flash("Profile updated!", "info") 
                 return redirect(url_for('show_user', id=current_user.id))
     
     return render_template('/users/edit.html', form=form)
