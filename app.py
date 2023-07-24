@@ -20,40 +20,40 @@ login_manager.init_app(app)
 
 connect_db(app)
 
-# @app.errorhandler(Exception)
-# def handle_exception(e):
-#     """
-#     Handle general exceptions.
+@app.errorhandler(Exception)
+def handle_exception(e):
+    """
+    Handle general exceptions.
 
-#     This function handles all exceptions and returns the HTTPException if it is an instance of HTTPException.
-#     Otherwise, it redirects to the 'unhandled_exception' route. This is a part of the Flask error handling system.
+    This function handles all exceptions and returns the HTTPException if it is an instance of HTTPException.
+    Otherwise, it redirects to the 'unhandled_exception' route. This is a part of the Flask error handling system.
     
-#     Args:
-#         e (Exception): The exception that was raised.
+    Args:
+        e (Exception): The exception that was raised.
 
-#     Returns:
-#         HTTPException or Werkzeug Response: Returns the HTTPException if e is an instance of it. Otherwise, 
-#         it returns a redirection to 'unhandled_exception' route.
-#     """
+    Returns:
+        HTTPException or Werkzeug Response: Returns the HTTPException if e is an instance of it. Otherwise, 
+        it returns a redirection to 'unhandled_exception' route.
+    """
 
-#     if isinstance(e, HTTPException):
-#         return e
+    if isinstance(e, HTTPException):
+        return e
     
-#     return redirect(url_for('unhandled_exception'))
+    return redirect(url_for('unhandled_exception'))
 
-# @app.route('/oops')
-# def unhandled_exception():
-#     """
-#     Handle unhandled exceptions.
+@app.route('/oops')
+def unhandled_exception():
+    """
+    Handle unhandled exceptions.
 
-#     This function is used to handle all exceptions that are not explicitly caught elsewhere in the application.
-#     It renders the 'oops.html' template, which is typically used to display an error message to the user.
+    This function is used to handle all exceptions that are not explicitly caught elsewhere in the application.
+    It renders the 'oops.html' template, which is typically used to display an error message to the user.
 
-#     Returns:
-#         Rendered template (str): Returns the 'oops.html' template which is used for displaying the error message.
-#     """
+    Returns:
+        Rendered template (str): Returns the 'oops.html' template which is used for displaying the error message.
+    """
 
-#     return render_template('oops.html')
+    return render_template('oops.html')
 
 
 @login_manager.user_loader
@@ -204,7 +204,13 @@ def show_user(id):
 
     user = User.query.get_or_404(id)
 
-    story = Story.query.order_by(func.greatest(Story.created_at, Story.accessed_at).desc()).first()
+    story = (
+        Story.query
+        .filter_by(author_id=current_user.id)
+        .order_by(func.greatest(Story.created_at, Story.accessed_at).desc())
+        .first()
+        )
+
     steps = StoryStep.query.filter_by(story_id=story.id).all()
 
     if current_user.id != id:
