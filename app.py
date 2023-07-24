@@ -257,7 +257,7 @@ def edit_user():
                 return redirect(url_for('homepage'))
             
             else:
-                user_data = {field.name: field.data for field in form if field.name != 'password'}
+                user_data = {field.name: field.data for field in form if field.name not in ['username', 'password']}
                 for field, value in user_data.items():
                     setattr(user, field, value)
                 db.session.commit()  
