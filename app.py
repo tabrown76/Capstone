@@ -10,7 +10,7 @@ import os
 import openai
 
 app = Flask (__name__)
-app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql:///ai_venture"
+app.config["SQLALCHEMY_DATABASE_URI"] = (os.environ.get("DATABASE_URL", "postgresql:///ai_venture"))
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SQLALCHEMY_ECHO"] = True
 app.config["SECRET_KEY"] = os.getenv("FLASK_SECRET_KEY")
