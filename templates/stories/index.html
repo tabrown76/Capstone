@@ -22,7 +22,7 @@
                         <div class="card-body">
                             <h5 class="card-title">{{story.title}}</h5>
                             {% if not story.end %}
-                            <a href="{{url_for('show_story', id=story.id)}}"><p class="card-text">Try Again!</p></a>
+                            <a href="{{url_for('show_story', id=story.id)}}"><p class="card-text">Choose a Different Path...</p></a>
                             {% endif %}
                             <a href="{{url_for('read_story', id=story.id)}}"><p class="card-text">Read Story</p></a>
                             <a href="{{url_for('edit_story', id=story.id)}}" class="btn btn-outline-secondary" style="display: inline;">Edit</a>

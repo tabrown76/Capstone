@@ -5,33 +5,8 @@
 <div id="warbler-hero" class="full-width">
   <img src="/static/images/library.png" alt="Background Image" id="profile-background">
 </div>
-<img src="{{current_user.image_url}}" alt="Image for {{current_user.username}}" id="profile-avatar">
-<div class="row full-width">
-  <div class="container">
-    <div class="row justify-content-end">
-      <div class="col-9">
-        <ul class="user-stats nav nav-pills">
-          <li class="stat">
-            <p class="small">Stories</p>
-            <h4>
-              <a href="{{url_for('show_stories')}}">{{current_user.stories | length}}</a>
-            </h4>
-          </li>
-          <li class="stat">
-            <p class="small">Characters</p>
-            <h4>
-              <a href="{{url_for('show_characters')}}">{{current_user.characters | length}}</a>
-            </h4>
-          </li>
-          <div class="ml-auto">
-            {% if current_user.id == user.id %}
-            <a href="{{url_for('edit_user')}}" class="btn btn-outline-secondary">Edit Profile</a>
-            {% endif %}
-          </div>
-        </ul>
-      </div>
-    </div>
-  </div>
+<div class="d-none d-lg-block">
+  <img src="{{current_user.image_url}}" alt="Image for {{current_user.username}}" id="profile-avatar">
 </div>
 
 <div class="row">
@@ -40,6 +15,7 @@
   </div>
 </div>
 
+{% if story %}
 <div class="row">{{story.title}}</div>
 <div class="row">{{story.start_content}}</div>
 <hr>
@@ -55,5 +31,8 @@
     </form>
   </div>
 {% endfor %}
+{% endif %}
+{% else %}
+<h2><a href="{{url_for('homepage')}}">Create</a> a Story!</h2>
 {% endif %}
 {% endblock %}

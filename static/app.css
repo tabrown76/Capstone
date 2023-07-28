@@ -26,6 +26,7 @@ body.error-404 {
 
 ul {
   list-style-type: none;
+  padding-left: 0;
 }
 
 .btn {
@@ -39,6 +40,17 @@ ul {
 .btn:hover {
   cursor: pointer;
 }
+
+.form-fields {
+  flex: 1 0 0;
+  margin-right: 20px;
+}
+
+.character-list {
+    /* flex: 0 0 auto; */
+  margin-left: 20px; 
+}
+
 
 /* ======================= Nav */
 
@@ -74,7 +86,7 @@ ul {
   border-radius: 2px;
 }
 
-.nav > li > a > img {
+.nav > li > img {
   width: 32px;
   border-radius: 32px;
 }
@@ -91,6 +103,31 @@ ul.nav.navbar-nav li {
 nav form.navbar-form {
   display: flex;
   position: relative;
+}
+
+nav .dropdown-toggle {
+  color: #fff;
+}
+
+.dropdown-toggle:focus, .dropdown-toggle:active {
+  color: #fff;
+  border: none;
+  box-shadow: none;
+}
+
+.dropdown-toggle:hover {
+  color: #0066cc;
+  border: none;
+  box-shadow: none;
+}
+
+nav #dropdown-menu li > a:hover {
+  text-decoration: none;
+}
+
+nav #dropdown-menu li > a > button:hover {
+  color: #fff;
+  background-color: #0066cc;
 }
 
 #search.form-control {
@@ -398,7 +435,7 @@ nav + .container {
 
 .image-wrapper {
   width: 100%;
-  padding-bottom: 36%;
+  padding-bottom: 66%;
   position: relative;
   overflow: hidden;
 }
@@ -426,8 +463,9 @@ p.card-bio {
   left: 0;
   z-index: -1;
   background-image: url("/static/images/library.png");
-  background-size: cover;
+  background-size: contain;
   background-position: center center;
+  background-repeat: no-repeat;
   color: #fff;
   text-align: center;
   padding: 1rem;
@@ -459,7 +497,6 @@ p.card-bio {
 
 #home-aside > .user-card {
   margin-top: 0;
-  overflow: hidden;
 }
 
 #home-aside > .user-card .card-link {

@@ -3,7 +3,7 @@
 {% block content %}
 <div class="row">
 
-  <aside class="col-md-4 col-lg-3 col-sm-12" id="home-aside">
+  <aside class="col-md-4 col-lg-3 d-none d-md-block" id="home-aside">
     <div class="card user-card">
       <div>
         <div class="image-wrapper">
@@ -30,43 +30,56 @@
           </li>
         </ul>
       </div>
-    </div>
-    
+    </div>    
   </aside>
 
   <div class="col-lg-6 col-md-8 col-sm-12">
     <h4>Let's Make a Story!</h4>
     <hr>
-    <div class="row justify-content-md-center">
-        <form method="POST" action='/story/generate'class="col-md-6">
+    <div>
+      <div class="row justify-content-md-center">
+        <form method="POST" action='/story/generate'>
           {{form.hidden_tag()}}
           
-          {% for field in form
-            if field.widget.input_type != 'hidden' %}
-          {% for error in field.errors %} 
-          <span class="text-danger">{{error}}</span> 
-          {% endfor %}
-          <div style="display: inline-block">
-            <label>{{field.label.text}}</label> 
-            {{field}}
+          <div class="d-flex">
+            <div class="form-fields col-lg-4 col-md-5">
+              {% for field in form
+                if field.widget.input_type != 'hidden' %}
+              {% for error in field.errors %} 
+              <span class="text-danger">{{error}}</span> 
+              {% endfor %}
+              <div class="form-fields">
+                <label><u>{{field.label.text}}</u></label> 
+                {{field}}
+              </div>
+              {% endfor %}
+            </div>
+            <div class="character-list col-lg-4 col-md-5">
+              <p style="margin-bottom: 0px;"><u>Characters</u></p>
+              {% if characters.total == 0 %}
+              <a href="{{url_for('add_character')}}"><h5>Create</h5></a><p class="d-none d-md-block"> a character, to personalize your story!</p>
+              {% else %}
+              {% for character in characters.items %}
+              <label style="display: block">
+                <input type="checkbox" name="characters" value="{{character.id}}"> {{character.name}}
+              </label>
+              {% endfor %}
+              {% if characters.has_prev %}
+              <a href="{{url_for('homepage', page=characters.prev_num)}}">Previous</a>
+              {% endif %}
+              {% if characters.has_next %}
+              <a href="{{url_for('homepage', page=characters.next_num)}}">Next</a>
+              {% endif %}
+              {% endif %}
+            </div>
           </div>
-          {% endfor %}
-          <div style="display: inline-block">
-          <p>Characters</p>
-          {% if characters | length == 0 %}
-          <a href="{{url_for('add_character')}}"><h5>Create</h5></a><h5> a character, to personalize your story!</h5>
-          {% else %}
-          {% for character in characters %}
-          <label style="display: block">
-            <input type="checkbox" name="characters" value="{{character.id}}"> {{character.name}}
-          </label>
-          {% endfor %}
-          {% endif %}
-          </div>
-          <div class="edit-btn-area">
+          
+          <div class="edit-btn-area justify-content-center">
             <button class="btn btn-primary">Generate Story!</button>
           </div>
+          
         </form>
+      </div>
     </div>
   </div>
 </div>
