@@ -107,6 +107,7 @@ nav form.navbar-form {
 
 nav .dropdown-toggle {
   color: #fff;
+  border: none;
 }
 
 .dropdown-toggle:focus, .dropdown-toggle:active {
