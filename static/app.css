@@ -287,34 +287,6 @@ nav + .container {
   padding-top: 3px;
 }
 
-#messages {
-  position: relative;
-}
-
-#messages .message-link {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 1;
-}
-
-#messages .list-group-item a:not(.message-link) {
-  position: relative;
-  z-index: 2;
-}
-
-#messages .list-group-item {
-  display: flex;
-  align-items: flex-start;
-  padding: 7px 20px 12px;
-}
-
-#messages:not(.no-hover) .list-group-item:hover {
-  background-color: #e6ecf0;
-}
-
 #sidebar-username {
   margin-top: 30px;
   font-size: 21px;
@@ -547,33 +519,17 @@ p.card-bio {
   background-color: #62676c;
 }
 
-#messages.no-hover .message-area {
-  width: 100%;
-}
-
-#messages.no-hover .message-heading {
-  display: flex;
-  justify-content: space-between;
-  height: 47px;
-  margin-top: 3px;
-}
-
-#messages.no-hover .message-heading .btn {
-  min-width: 105px;
-}
-
-#messages-form {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  z-index: 1;
-}
-
 .single-message {
   font-size: 27px;
   line-height: 32px;
   letter-spacing: 0.01em;
   margin-bottom: 10px;
+}
+
+/* =========================== Stories */
+
+.indent {
+  text-indent: 2rem;
 }
 
 /* ================================ 404 page */

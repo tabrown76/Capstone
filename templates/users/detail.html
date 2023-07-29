@@ -9,18 +9,12 @@
   <img src="{{current_user.image_url}}" alt="Image for {{current_user.username}}" id="profile-avatar">
 </div>
 
-<div class="row">
-  <div class="col-sm-3">
-    <h4 id="sidebar-username">{{current_user.username}}</h4>
-  </div>
-</div>
-
 {% if story %}
-<div class="row">{{story.title}}</div>
-<div class="row">{{story.start_content}}</div>
+<div class="row"><h4>"{{story.title}}"</h4></div>
+<div class="row"><p class="indent">{{story.start_content}}</p></div>
 <hr>
 {% if story.end %}
-<h2>The End</h2>
+<h4>The End</h4>
 {% else %}
   {% for step in steps %}
   <div class="row">
