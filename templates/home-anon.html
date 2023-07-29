@@ -5,6 +5,9 @@
     <h1>Create Your Own...</h1>
     <h4>...AI-Adventure</h4>
     <p>Sign up now to begin creating your own personalized stories.</p>
-    <a href="{{url_for('signup')}}" class="btn btn-primary">Sign up</a>
+    <div class="row">
+      <a href="{{url_for('signup')}}" class="btn btn-primary">Sign up</a>
+      <a href="{{url_for('login')}}" class="btn btn-primary">Login</a>
+    </div>
   </div>
 {% endblock %}

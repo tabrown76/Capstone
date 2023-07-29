@@ -9,8 +9,8 @@
     <link rel="stylesheet" href="/static/app.css">
 </head>
 <body class="{% block body_class %}{% endblock %}">
-    <nav class="navbar navbar-expand sticky-top">
-        <div class="container-fluid">
+    <nav class="navbar navbar-expand">
+        <div class="container-fluid fixed-top">
             <div class="navbar-header">
                 <a href="{{url_for('homepage')}}" class="navbar-brand">
                     <img src="/static/images/logo.png" alt="logo"><span> AI-venture</span>
@@ -22,19 +22,21 @@
                 <li><a href="{{url_for('login')}}">Log in</a></li>
                 {% else %}
                 <li><img src="{{current_user.image_url}}" alt="{{current_user.username}}"></li>
-                <div class="dropdown">
-                    <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                      {{current_user.username}}
-                    </button>
-                    <ul id="dropdown-menu" class="dropdown-menu">
-                        <li><a href="{{url_for('homepage')}}"><button class="dropdown-item" type="button">Create Story</button></a></li>
-                        <li><a href="{{url_for('show_user', id=current_user.get_id())}}"><button class="dropdown-item" type="button">View Profile</button></a></li>
-                        <li><a href="{{url_for('show_stories')}}"><button class="dropdown-item" type="button">My Stories</button></a></li>
-                        <li><a href="{{url_for('show_characters')}}"><button class="dropdown-item" type="button">My Characters</button></a></li>
-                        <li><a href="{{url_for('edit_user')}}"><button class="dropdown-item" type="button">Edit Profile</button></a></li>
-                        <li><a href="{{url_for('logout')}}"><button class="dropdown-item" type="button">Logout</button></a></li>
-                    </ul>
-                </div>
+                <li>
+                    <div class="dropdown">
+                        <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                          {{current_user.username}}
+                        </button>
+                        <ul id="dropdown-menu" class="dropdown-menu">
+                            <li><a href="{{url_for('homepage')}}"><button class="dropdown-item" type="button">Create Story</button></a></li>
+                            <li><a href="{{url_for('show_user', id=current_user.get_id())}}"><button class="dropdown-item" type="button">View Profile</button></a></li>
+                            <li><a href="{{url_for('show_stories')}}"><button class="dropdown-item" type="button">My Stories</button></a></li>
+                            <li><a href="{{url_for('show_characters')}}"><button class="dropdown-item" type="button">My Characters</button></a></li>
+                            <li><a href="{{url_for('edit_user')}}"><button class="dropdown-item" type="button">Edit Profile</button></a></li>
+                            <li><a href="{{url_for('logout')}}"><button class="dropdown-item" type="button">Logout</button></a></li>
+                        </ul>
+                    </div>
+                </li>
                 {% endif %}
             </ul>
         </div>

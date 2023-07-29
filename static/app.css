@@ -51,6 +51,10 @@ ul {
   margin-left: 20px; 
 }
 
+a {
+  margin-left: 5px;
+}
+
 
 /* ======================= Nav */
 
@@ -61,6 +65,11 @@ ul {
   margin-bottom: 1rem;
   position: relative;
   z-index: 9999;
+}
+
+.navbar .container-fluid {
+  background-color: RGB(25,25,112);
+  padding: 5px;
 }
 
 .navbar a {
@@ -88,7 +97,7 @@ ul {
 
 .nav > li > img {
   width: 32px;
-  border-radius: 32px;
+  border-radius: 100%;
 }
 
 ul.nav.navbar-nav {
@@ -129,36 +138,6 @@ nav #dropdown-menu li > a:hover {
 nav #dropdown-menu li > a > button:hover {
   color: #fff;
   background-color: #0066cc;
-}
-
-#search.form-control {
-  border-radius: 20px;
-  margin-bottom: 0;
-  width: 100%;
-  font-size: 13px;
-  padding-right: 28px;
-  box-sizing: border-box;
-}
-
-#search.form-control + .btn {
-  position: absolute;
-  right: 9px;
-  top: 2px;
-  bottom: 4px;
-  z-index: 1;
-  padding: 0;
-  color: #66757f;
-}
-
-#search.form-control + .btn:active,
-#search.form-control + .btn:focus {
-  box-shadow: none;
-}
-
-#search:active,
-#search:focus {
-  box-shadow: none;
-  border: 2px solid #007bff;
 }
 
 /* on "onboarding" pages (signup & login), the navbar is
