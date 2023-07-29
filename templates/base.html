@@ -27,7 +27,7 @@
                         <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                           {{current_user.username}}
                         </button>
-                        <ul id="dropdown-menu" class="dropdown-menu">
+                        <ul id="dropdown-menu" class="dropdown-menu dropdown-menu-end">
                             <li><a href="{{url_for('homepage')}}"><button class="dropdown-item" type="button">Create Story</button></a></li>
                             <li><a href="{{url_for('show_user', id=current_user.get_id())}}"><button class="dropdown-item" type="button">View Profile</button></a></li>
                             <li><a href="{{url_for('show_stories')}}"><button class="dropdown-item" type="button">My Stories</button></a></li>

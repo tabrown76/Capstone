@@ -4,32 +4,36 @@
 <h3>Create a Character!</h3>
 <div class="row"><h6>Create your own characters to customize your stories.</h6></div>
 <hr>
-<div class="row">
+<div class="row justify-content-left">
     <div class="col-lg-4 col-md-6 col-12">
-        <a href="{{url_for('add_character')}}" class="btn btn-outline btn-primary btn-lg">Create!</a>
-    </div>
-    <div class="col-lg-4 col-md-6 col-12">
-        <a href="{{url_for('homepage')}}" class="btn btn-outline btn-danger btn-lg">Cancel</a>
+        <a href="{{url_for('add_character')}}" class="btn btn-outline-primary btn-lg">Create!</a>
+        <a href="{{url_for('homepage')}}" class="btn btn-outline-danger btn-lg">Cancel</a>
     </div>
 </div>
-<div class="row justify-content-end">
-    <div class="col-sm-9">
-        <div class="row">
-            {% for character in characters %}
-            <div class="col-lg-4 col-md-6 col-12">
-                <div class="card" style="width: 18rem;">
-                        <img class="card-img-top" src="{{character.img_url}}" alt="{{character.name}}">
-                        <div class="card-body">
-                            <h5 class="card-title">{{character.name}}</h5>
-                            <p class="card-text">{{character.description}}</p>
-                            <a href="{{url_for('edit_character', id=character.id)}}" class="btn btn-outline-secondary" style="display: inline;">Edit</a>
-                            <form method="POST" action="{{url_for('delete_character', id=character.id)}}" style="display: inline;">
-                                <button class="btn btn-outline-danger">Delete</button>
-                            </form>
-                        </div>
-                </div>
+<div class="row justify-content-left">
+    <div class="row">
+        {% for character in characters.items %}
+        <div class="col-lg-4 col-md-6 col-12">
+            <div class="card" style="width: 18rem;">
+                    <img class="card-img-top img-fluid" src="{{character.img_url}}" alt="{{character.name}}">
+                    <div class="card-body">
+                        <h5 class="card-title">{{character.name}}</h5>
+                        <p class="card-text">{{character.description}}</p>
+                        <a href="{{url_for('edit_character', id=character.id)}}" class="btn btn-outline-secondary" style="display: inline;">Edit</a>
+                        <form method="POST" action="{{url_for('delete_character', id=character.id)}}" style="display: inline;">
+                            <button class="btn btn-outline-danger">Delete</button>
+                        </form>
+                    </div>
             </div>
-            {% endfor %}
+        </div>        
+        {% endfor %}
+        <div class="pagination">
+            {% if characters.has_prev %}
+            <a class="btn btn-outline-primary" href="{{ url_for('show_characters', page=characters.prev_num) }}">Previous</a>
+            {% endif %}
+            {% if characters.has_next %}
+            <a class="btn btn-outline-primary" href="{{ url_for('show_characters', page=characters.next_num) }}">Next</a>
+            {% endif %}
         </div>
     </div>
 </div>

@@ -1,14 +1,17 @@
 {% extends 'base.html' %}
 
 {% block content %}
-{{chain[0].title}}
+<div class="row"><h3>"{{chain[0].title}}"</h3></div>
 <hr>
 <div class="row">
     <div class="col-lg-4 col-md-6 col-12">
-        <a href="{{url_for('show_stories')}}" class="btn btn-outline btn-danger btn-sm">Back</a>
+        <a href="{{url_for('show_stories')}}" class="btn btn-outline-danger btn-sm">Back</a>
     </div>
 </div>
 {% for story in chain %}
-<div class="row">{{story.start_content}}</div>
+<div class="row container-fluid"><p class="indent">{{story.start_content}}</p></div>
 {% endfor %}
+<div class="row">
+    <h4><i>The End</i></h4>
+</div>
 {% endblock %}

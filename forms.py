@@ -199,7 +199,7 @@ class CharacterForm(FlaskForm):
                                                      UniquePerUser()])
     description = TextAreaField('Description', validators=[DataRequired(),
                                                            Length(max=250)])
-    image_url = StringField('(Optional) Character Image URL')
+    img_url = StringField('(Optional) Character Image URL')
 
 class GenreLimit(object):
     """

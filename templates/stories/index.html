@@ -4,35 +4,39 @@
 <h3>Let's Read!</h3>
 <div class="row"><h6>Try again to choose a different path, or read the story from the beginning.</h6></div>
 <hr>
-<div class="row">
+<div class="row justify-content-left">
     <div class="col-lg-4 col-md-6 col-12">
-        <a href="{{url_for('homepage')}}" class="btn btn-outline btn-primary btn-lg">Create!</a>
-    </div>
-    <div class="col-lg-4 col-md-6 col-12">
-        <a href="{{url_for('homepage')}}" class="btn btn-outline btn-danger btn-lg">Cancel</a>
+        <a href="{{url_for('homepage')}}" class="btn btn-outline-primary btn-lg">Create!</a>
+        <a href="{{url_for('homepage')}}" class="btn btn-outline-danger btn-lg">Cancel</a>
     </div>
 </div>
-<div class="row justify-content-end">
-    <div class="col-sm-9">
-        <div class="row">
-            {% for story in stories %}
-            <div class="col-lg-4 col-md-6 col-12">
-                <div class="card" style="width: 18rem;">
-                        <img class="card-img-top" src="{{story.img_url}}" alt="{{story.title}}">
-                        <div class="card-body">
-                            <h5 class="card-title">{{story.title}}</h5>
-                            {% if not story.end %}
-                            <a href="{{url_for('show_story', id=story.id)}}"><p class="card-text">Choose a Different Path...</p></a>
-                            {% endif %}
-                            <a href="{{url_for('read_story', id=story.id)}}"><p class="card-text">Read Story</p></a>
-                            <a href="{{url_for('edit_story', id=story.id)}}" class="btn btn-outline-secondary" style="display: inline;">Edit</a>
-                            <form method="POST" action="{{url_for('delete_story', id=story.id)}}" style="display: inline;">
-                                <button class="btn btn-outline-danger">Delete</button>
-                            </form>
-                        </div>
-                </div>
+<div class="row justify-content-left">
+    <div class="row">
+        {% for story in stories.items %}
+        <div class="col-lg-4 col-md-6 col-12">
+            <div class="card" style="width: 18rem;">
+                    <img class="card-img-top img-fluid" src="{{story.img_url}}" alt="{{story.title}}">
+                    <div class="card-body">
+                        <h5 class="card-title">{{story.title}}</h5>
+                        {% if not story.end %}
+                        <a href="{{url_for('show_story', id=story.id)}}"><p class="card-text">Choose a Different Path...</p></a>
+                        {% endif %}
+                        <a href="{{url_for('read_story', id=story.id)}}"><p class="card-text">Read Story</p></a>
+                        <a href="{{url_for('edit_story', id=story.id)}}" class="btn btn-outline-secondary" style="display: inline;">Edit</a>
+                        <form method="POST" action="{{url_for('delete_story', id=story.id)}}" style="display: inline;">
+                            <button class="btn btn-outline-danger">Delete</button>
+                        </form>
+                    </div>
             </div>
-            {% endfor %}
+        </div>
+        {% endfor %}
+        <div class="pagination">
+            {% if stories.has_prev %}
+            <a class="btn btn-outline-primary" href="{{ url_for('show_stories', page=stories.prev_num) }}">Previous</a>
+            {% endif %}
+            {% if stories.has_next %}
+            <a class="btn btn-outline-primary" href="{{ url_for('show_stories', page=stories.next_num) }}">Next</a>
+            {% endif %}
         </div>
     </div>
 </div>

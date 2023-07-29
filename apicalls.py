@@ -32,7 +32,7 @@ def make_api_request(selected_genres, selected_characters):
         messages=[
             {"role": "system", "content": "You are a storyteller, creating a formatted choose your own adventure story, rated no higher than PG-13, with the genres of {} and the characters of {}.".format(genres, characters)},
             {"role": "system", "content": "Use these exact tags to separate story parts. [title]generate a short title, [start_content] generate a 400-500 word story, [choice_text] generate first short choice, [choice_text] generate second short choice"},
-            {"role": "system", "content": "After providing choices, stop the story; do not simulate making a choice. Do not return anything not explicitly requested. All labels lower-case."}
+            {"role": "system", "content": "After providing choices, stop the story; do not simulate making a choice. Include all tags; do not include extra tags. All tags lower-case."}
         ]
     )
 
@@ -92,7 +92,7 @@ def next_step(id, new_choice):
             {"role": "system", "content": "You are a storyteller, continuing a formatted choose your own adventure story, rated no higher than PG-13. The story should be long and engaging, not ending after a single branch."},
             {"role": "user", "content": story.start_content + " " + choice.choice_text},
             {"role": "system", "content": "Use these exact tags to separate story parts. [start_content] generate a 400-500 word story, [choice_text] generate first short choice, [choice_text] generate second short choice. Only if the story ends, use [end_content]."},
-            {"role": "system", "content": "After providing new choices, stop the story; do not simulate making a choice. Do not repeat anything from prompt. Do not return anything not explicitly requested. All labels lower-case."}
+            {"role": "system", "content": "After providing new choices, stop the story; do not simulate making a choice. Do not repeat anything from prompt. Include all tags; do not include extra tags. All tags lower-case."}
         ]
     )
 
