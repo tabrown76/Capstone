@@ -413,6 +413,10 @@ p.card-bio {
   background: rgba(255, 255, 255, 0.3);
 }
 
+a#password {
+  color: #fff
+}
+
 /* ============================== Signed in Home */
 
 #home-aside > .user-card {

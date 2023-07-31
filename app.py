@@ -1,21 +1,32 @@
-from flask import Flask, render_template, redirect, url_for, request, flash
+from flask import Flask, render_template, redirect, url_for, request, flash, session
 from flask_login import LoginManager, login_required, current_user, logout_user, login_user
 from models import db, connect_db, User, Story, StoryStep, Choice, Genre, Character, UserGenre
 from forms import AddUserForm, LoginForm, EditUserForm, GenreForm, CharacterForm, EditStoryForm
-
+from flask_mail import Mail, Message
+from utils import email_confirmed_required, send_confirmation_email, confirm_token
 from apicalls import make_api_request, next_step
 from sqlalchemy import func
 from werkzeug.exceptions import HTTPException
 from datetime import datetime
+from time import time
 import os
 import openai
-
 
 app = Flask (__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = (os.environ.get("DATABASE_URL", "postgresql:///ai_venture"))
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SQLALCHEMY_ECHO"] = True
 app.config["SECRET_KEY"] = os.getenv("FLASK_SECRET_KEY")
+
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = os.getenv("MAIL_USERNAME")
+app.config['MAIL_DEFAULT_SENDER'] = os.getenv("MAIL_USERNAME")
+app.config['MAIL_PASSWORD'] = os.getenv("MAIL_PASSWORD")
+app.config['SECURITY_PASSWORD_SALT'] = os.getenv("SECURITY_PASSWORD_SALT")
+
+mail = Mail(app)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -89,7 +100,7 @@ def homepage():
         Rendered template (str): Returns the 'home.html' template if the user is authenticated,
         or the 'home-anon.html' template if the user is not authenticated.
     """
-    
+
     if current_user.is_authenticated:
 
         form = GenreForm()
@@ -105,17 +116,20 @@ def homepage():
 @app.route('/user/signup', methods=["GET", "POST"])
 def signup():
     """
-    Handle user sign-up.
+    Handle the user sign-up process.
 
     This function handles both GET and POST requests to the '/user/signup' route. 
-    For a GET request, it displays a form for the user to enter their signup details.
-    For a POST request, it validates the user's input and if valid, creates a new user account,
-    logs them in, and redirects them to the homepage.
+    For a GET request, it provides the user with a sign-up form to enter their details.
+    For a POST request, it takes the data provided by the user, validates it, and if valid, 
+    creates a new user account, commits the changes to the database, logs the user in, sends a confirmation 
+    email and then redirects the user to the 'thanks' page. If the data provided is not valid, it re-renders 
+    the sign-up form with errors.
 
     Returns:
-        Rendered template or Werkzeug Response: For a GET request, it returns the 'users/signup.html' template.
-        For a POST request, if form validation succeeds, it redirects the user to the homepage. 
-        If form validation fails, it renders the 'users/signup.html' template again with form errors.
+        Rendered template or redirect function: 
+        For a GET request, or for a POST request where the data is not valid, 
+        it returns the 'users/signup.html' template with the form.
+        For a POST request where the data is valid, it redirects the user to the 'thanks' page.
     """
 
     form = AddUserForm()
@@ -125,10 +139,11 @@ def signup():
         new_user = User.signup(user_data)
 
         db.session.commit()
-        login_user(new_user)        
-        flash("Sign up successful!", "success")
+        login_user(new_user)
+        send_confirmation_email(mail, app, new_user.email)       
+        flash("Confirmation email sent.", "info")
 
-        return redirect(url_for('homepage'))
+        return redirect(url_for('thanks'))
 
 
     return render_template('/users/signup.html', form=form)
@@ -136,18 +151,21 @@ def signup():
 @app.route('/user/login', methods=["GET", "POST"])
 def login():
     """
-    Handle user login.
+    Manage the user login process.
 
     This function handles both GET and POST requests to the '/user/login' route.
-    For a GET request, it displays a form for the user to enter their login details.
-    For a POST request, it validates the user's input and if valid, logs the user in 
-    and redirects them to the homepage.
+    For a GET request, it serves a form for the user to enter their login credentials.
+    For a POST request, it validates the user's input against the data in the database. If the credentials are valid 
+    and the user's email is confirmed, it logs the user in, displays a welcome message and redirects them to the homepage. 
+    If the credentials are valid but the email is not confirmed, it logs the user in, instructs them to confirm their email,
+    and redirects to the 'unconfirmed' route. If the credentials are not valid, it flashes an invalid credentials message.
 
     Returns:
-        Rendered template or Werkzeug Response: For a GET request, it returns the 'users/login.html' template.
-        For a POST request, if form validation succeeds and the user is authenticated, it redirects 
-        the user to the homepage. If form validation fails or the user cannot be authenticated, 
-        it renders the 'users/login.html' template again with form errors or a failure message.
+        Rendered template or redirection: 
+        For a GET request, or for a POST request with invalid credentials, it returns the 'users/login.html' 
+        template with the form and any applicable errors.
+        For a POST request with valid credentials, it redirects the user to the appropriate route based on the 
+        confirmation status of the user's email.
     """
 
     form = LoginForm()
@@ -156,14 +174,122 @@ def login():
         user = User.authenticate(form.username.data,
                                  form.password.data)
         
-        if user:
+        if user and user.email_confirmed:
             login_user(user)
             flash(f"Welcome back, {user.username}!", "success")
             return redirect(url_for('homepage'))
         
-        flash("Invalid Username/Password combination.", "danger")
+        elif user:
+            login_user(user)
+            flash('Please confirm e-mail.', 'danger')
+            return redirect(url_for('unconfirmed'))
+        
+        else:
+            flash("Invalid Username/Password combination.", "danger")
 
     return render_template('/users/login.html', form=form)
+
+@app.route('/user/confirm', methods=["GET", "POST"])
+@login_required
+def unconfirmed():
+    """
+    Manage the process of user email confirmation.
+
+    This function handles both GET and POST requests to the '/user/confirm' route. 
+    It requires the user to be logged in, which is ensured by the '@login_required' decorator.
+
+    For a GET request, it checks if the user's email is already confirmed. If confirmed, it informs the user
+    and redirects them to the homepage. If not confirmed, it renders the 'unconfirmed.html' template which provides
+    options to resend the confirmation email.
+
+    For a POST request, it checks if a confirmation email was sent within the last 5 minutes. If not, it sends a 
+    new confirmation email, flashes a confirmation message, and redirects the user to the 'thanks' page. If an email 
+    was sent within the last 5 minutes, it informs the user to check their spam folder or wait before trying again.
+
+    Returns:
+        Rendered template or redirection: 
+        For a GET request, it either redirects the user to the homepage or returns the 'unconfirmed.html' template.
+        For a POST request, it either redirects the user to the 'thanks' page or returns the 'unconfirmed.html' template.
+    """
+
+    if current_user.email_confirmed:
+        flash('Your email is already confirmed.', 'info')
+        return redirect(url_for('homepage'))
+
+    if request.method == "POST":
+        key = 'unconfirmed_last_call'
+
+        if key in session: 
+            
+            if time() < session[key] + 300:
+                flash('Please check your spam folder, or wait 5 minutes to try again.', 'danger')
+                return render_template('unconfirmed.html')
+            
+        send_confirmation_email(mail, app, current_user.email)
+        flash("Confirmation email sent.", "info")
+        session[key] = time()
+        return redirect(url_for('thanks'))
+
+    return render_template('unconfirmed.html')
+
+@app.route('/user/confirm/<token>', methods=["GET", "POST"])
+def confirm_email(token):
+    """
+    Validate the user's email confirmation token.
+
+    This function handles both GET and POST requests to the '/user/confirm/<token>' route.
+    It receives a unique token that was sent to the user's email address.
+
+    It first tries to confirm the token. If the token is invalid or expired, it flashes a corresponding
+    message and redirects the user to the 'unconfirmed' route.
+
+    If the token is valid, it fetches the user associated with the email address extracted from the token.
+    If the user's email is already confirmed, it informs the user and redirects them to the homepage.
+    If the user's email is not yet confirmed, it sets the user's 'email_confirmed' attribute to True, 
+    saves this change in the database, flashes a success message, and redirects the user to the homepage.
+
+    Args:
+        token (str): The confirmation token that was sent to the user's email.
+
+    Returns:
+        Redirection: Based on the validation of the token and the confirmation status of the user's email,
+        it redirects the user to the appropriate route.
+    """
+
+    try:
+        email = confirm_token(app, token)
+
+    except:
+        flash('The confirmation link is invalid or has expired.', 'danger')
+
+        return redirect(url_for('unconfirmed'))
+
+    user = User.query.filter_by(email=email).first_or_404()
+
+    if user.email_confirmed:
+        flash('Account already confirmed. Please login.', 'info')
+
+    else:
+        user.email_confirmed = True
+        db.session.add(user)
+        db.session.commit()
+        flash('You have confirmed your account.', 'success')
+
+    return redirect(url_for('homepage'))
+
+@app.route('/user/thanks')
+def thanks():
+    """
+    Render a 'Thank You' page.
+
+    This function handles GET requests to the '/user/thanks' route and it doesn't require any input parameters. 
+    It is used to display a 'Thank You' message to the user after successful registration.
+
+    Returns:
+        Rendered template: Returns the 'thanks.html' template that is used to display the thank you message.
+    """
+
+    return render_template('thanks.html')
 
 @app.route('/user/logout')
 @login_required
@@ -185,6 +311,7 @@ def logout():
 
 @app.route('/user/<int:id>')
 @login_required
+@email_confirmed_required
 def show_user(id):
     """
     Display user profile and recent story details.
@@ -227,6 +354,7 @@ def show_user(id):
 
 @app.route('/user/edit', methods=["GET", "POST"])
 @login_required
+@email_confirmed_required
 def edit_user():
     """
     Handle the editing of user profiles.
@@ -276,6 +404,7 @@ def edit_user():
 
 @app.route('/character/add', methods=["GET", "POST"])
 @login_required
+@email_confirmed_required
 def add_character():
     """
     Handles the creation of new characters.
@@ -307,6 +436,7 @@ def add_character():
 
 @app.route('/character/index', methods=["GET", "POST"])
 @login_required
+@email_confirmed_required
 def show_characters():
     """
     Display the list of characters created by the current user.
@@ -329,6 +459,7 @@ def show_characters():
 
 @app.route('/character/edit/<int:id>', methods=["GET", "POST"])
 @login_required
+@email_confirmed_required
 def edit_character(id):
     """
     Edit the details of a specific character.
@@ -370,6 +501,7 @@ def edit_character(id):
 
 @app.route('/character/delete/<int:id>', methods=["POST"])
 @login_required
+@email_confirmed_required
 def delete_character(id):
     """
     Delete a specific character associated with the current user.
@@ -404,6 +536,7 @@ def delete_character(id):
     
 @app.route('/story/index', methods=["GET", "POST"])
 @login_required
+@email_confirmed_required
 def show_stories():
     """
     Display all stories associated with the current user.
@@ -424,6 +557,7 @@ def show_stories():
 
 @app.route('/story/edit/<int:id>', methods=["GET", "POST"])
 @login_required
+@email_confirmed_required
 def edit_story(id):
     """
     Edit a specific story associated with the current user.
@@ -466,6 +600,7 @@ def edit_story(id):
 
 @app.route('/story/delete/<int:id>', methods=["POST"])
 @login_required
+@email_confirmed_required
 def delete_story(id):
     """
     Delete a specific story associated with the current user.
@@ -500,6 +635,7 @@ def delete_story(id):
 
 @app.route('/story/generate', methods=["GET", "POST"])
 @login_required
+@email_confirmed_required
 def generate_story():
     """
     Handle the story generation process with selected genres and characters.
@@ -542,6 +678,7 @@ def generate_story():
 
 @app.route('/story/view/<int:id>')
 @login_required
+@email_confirmed_required
 def show_story(id):
     """
     Display the specified story by ID for the logged-in user.
@@ -578,6 +715,7 @@ def show_story(id):
     
 @app.route('/story/continue/<int:id>', methods=["POST"])
 @login_required
+@email_confirmed_required
 def continue_story(id):
     """
     Handle the process of continuing a story by adding new steps.
@@ -629,6 +767,7 @@ def continue_story(id):
     
 @app.route('/story/read/<int:id>')
 @login_required
+@email_confirmed_required
 def read_story(id):
     """
     Display the sequence of a story starting from a specified story.

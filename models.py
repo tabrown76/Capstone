@@ -10,7 +10,7 @@ class User(UserMixin, db.Model):
     Database model for users.
 
     A user has an id, username, first name, last name, email, password, 
-    an optional profile image URL, a timestamp of account creation, 
+    an optional profile image URL, a timestamp of account creation, email confirmation, 
     and relationships to other tables, including Story, Character, UserGenre, 
     and ChatGPTSession.
 
@@ -30,6 +30,7 @@ class User(UserMixin, db.Model):
     password = db.Column(db.Text, nullable=False)    
     image_url = db.Column(db.Text, default="/static/images/default-pic.png")
     created_at = db.Column(db.DateTime, default = datetime.utcnow)
+    email_confirmed = db.Column(db.Boolean, default = False)
 
     stories = db.relationship('Story', backref='author', cascade="all, delete-orphan")
     characters = db.relationship('Character', backref='user', cascade="all, delete-orphan")
