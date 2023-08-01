@@ -24,37 +24,37 @@ First, clone the repository to your local machine:
 
 ```bash
 git clone https://github.com/tabrown76/Capstone.git
-
+```
 Next, navigate to the project directory and create a virtual environment:
 
-bash
+```bash
 cd Capstone
 python3 -m venv venv
-
+```
 Activate the virtual environment:
 
 On Windows, run:
 
-cmd
+```cmd
 venv\Scripts\activate
-
+```
 On Unix or Linux, run:
 
-bash
+```bash
 source venv/bin/activate
-
+```
 Then install the required packages:
 
-bash
+```bash
 pip install -r requirements.txt
-
+```
 Usage
 
 To run the application, execute the following command:
 
-bash
+```bash
 flask run
-
+```
 Then visit http://127.0.0.1:5000/ in your web browser.
 
 Tools Used 

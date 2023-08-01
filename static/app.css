@@ -414,7 +414,7 @@ p.card-bio {
 }
 
 a#password {
-  color: #fff
+  margin-bottom: 10px;
 }
 
 /* ============================== Signed in Home */

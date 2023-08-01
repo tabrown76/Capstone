@@ -4,6 +4,7 @@ from models import db, connect_db, User, Story, StoryStep, Choice, Genre, Charac
 from forms import AddUserForm, LoginForm, EditUserForm, GenreForm, CharacterForm, EditStoryForm
 from flask_mail import Mail, Message
 from utils import email_confirmed_required, send_confirmation_email, confirm_token
+
 from apicalls import make_api_request, next_step
 from sqlalchemy import func
 from werkzeug.exceptions import HTTPException
@@ -104,7 +105,7 @@ def homepage():
         or the 'home-anon.html' template if the user is not authenticated.
     """
 
-    if current_user.is_authenticated:
+    if current_user.is_authenticated and current_user.email_confirmed:
 
         form = GenreForm()
         genres = Genre.query.all()
@@ -264,7 +265,10 @@ def confirm_email(token):
 
     except:
         flash('The confirmation link is invalid or has expired.', 'danger')
-
+        return redirect(url_for('unconfirmed'))
+    
+    if not email:
+        flash('The confirmation link is invalid or has expired.', 'danger')
         return redirect(url_for('unconfirmed'))
 
     user = User.query.filter_by(email=email).first_or_404()

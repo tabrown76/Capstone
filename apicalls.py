@@ -32,7 +32,7 @@ def make_api_request(selected_genres, selected_characters):
         messages=[
             {"role": "system", "content": "You are a storyteller, creating a formatted choose your own adventure story, rated no higher than PG-13, with the genres of {} and the characters of {}.".format(genres, characters)},
             {"role": "system", "content": "Use these exact tags to separate story parts. [title]generate a short title, [start_content] generate a 400-500 word story, [choice_text] generate first short choice, [choice_text] generate second short choice"},
-            {"role": "system", "content": "After providing choices, stop the story; do not simulate making a choice. Include all tags; do not include extra tags. All tags lower-case."}
+            {"role": "system", "content": "After providing choices, stop the story; do not simulate making a choice. Include all tags; do not include extra tags. Do not include choices unless preceeded by tag. All tags lower-case."}
         ]
     )
 
@@ -92,7 +92,7 @@ def next_step(id, new_choice):
             {"role": "system", "content": "You are a storyteller, continuing a formatted choose your own adventure story, rated no higher than PG-13. The story should be long and engaging, not ending after a single branch."},
             {"role": "user", "content": story.start_content + " " + choice.choice_text},
             {"role": "system", "content": "Use these exact tags to separate story parts. [start_content] generate a 400-500 word story, [choice_text] generate first short choice, [choice_text] generate second short choice. Only if the story ends, use [end_content]."},
-            {"role": "system", "content": "After providing new choices, stop the story; do not simulate making a choice. Do not repeat anything from prompt. Include all tags; do not include extra tags. All tags lower-case."}
+            {"role": "system", "content": "After providing new choices, stop the story; do not simulate making a choice. Do not repeat anything from prompt. Include all tags; do not include extra tags. Do not include choices unless preceeded by tag. All tags lower-case."}
         ]
     )
 
@@ -100,7 +100,25 @@ def next_step(id, new_choice):
     if response:
         response_content = response['choices'][0]['message']['content'].replace('[start_content]', '').strip()
 
-        if '[end_content]' in response_content:
+        if '[end_content]' in response_content and '[choice_text]' in response_content:
+            response_content = response_content.replace('[end_content]', '').strip()
+            response_parts = response_content.split('[choice_text]')
+        
+            start_content = response_parts[0].strip()
+        
+            choice1 = response_parts[1].strip()
+            choice2 = response_parts[2].strip()
+        
+            new_story = Story.create_story(title=story.title, start_content=start_content, author_id=current_user.id)
+        
+            step1 = StoryStep(content=choice1, story_id=new_story.id)
+            step2 = StoryStep(content=choice2, story_id=new_story.id)
+        
+            db.session.add(step1)
+            db.session.add(step2)
+            db.session.commit()
+
+        elif '[end_content]' in response_content:
             end_content = response_content.replace('[end_content]', '').strip()
             new_story = Story.create_story(title=story.title, start_content=end_content, author_id=current_user.id, end=True)
         
