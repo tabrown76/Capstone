@@ -1,9 +1,9 @@
 from flask import Flask, render_template, redirect, url_for, request, flash, session
 from flask_login import LoginManager, login_required, current_user, logout_user, login_user
 from models import db, connect_db, User, Story, StoryStep, Choice, Genre, Character, UserGenre
-from forms import AddUserForm, LoginForm, EditUserForm, GenreForm, CharacterForm, EditStoryForm
+from forms import AddUserForm, LoginForm, EditUserForm, GenreForm, CharacterForm, EditStoryForm, ResetPasswordForm
 from flask_mail import Mail, Message
-from utils import email_confirmed_required, send_confirmation_email, confirm_token
+from utils import email_confirmed_required, send_confirmation_email, confirm_token, send_reset_email
 
 from apicalls import make_api_request, next_step
 from sqlalchemy import func
@@ -284,7 +284,7 @@ def confirm_email(token):
 
     return redirect(url_for('homepage'))
 
-@app.route('/user/thanks')
+@app.route('/user/info')
 def thanks():
     """
     Render a 'Thank You' page.
@@ -295,8 +295,10 @@ def thanks():
     Returns:
         Rendered template: Returns the 'thanks.html' template that is used to display the thank you message.
     """
+    
+    source = request.args.get('source', default='')
 
-    return render_template('thanks.html')
+    return render_template('thanks.html', source=source)
 
 @app.route('/user/logout')
 @login_required
@@ -315,6 +317,108 @@ def logout():
     logout_user()
 
     return redirect(url_for('homepage'))
+
+@app.route('/user/password', methods=["GET", "POST"])
+def password_email():
+    """
+    Handle user password reset request via email.
+
+    This function handles both GET and POST requests to the '/user/password' route. 
+
+    For a GET request, it renders the password reset form to collect the user's email address.
+
+    For a POST request, it checks if a password reset email was sent within the last 5 minutes. If not, it sends a 
+    new reset password email, flashes a confirmation message, and redirects the user to the 'thanks' page with source 
+    as '/user/password'. If an email was sent within the last 5 minutes, it informs the user to check their spam 
+    folder or wait before trying again. If the entered email does not exist in the database, it flashes an error 
+    message indicating that the entered email does not match the records.
+
+    Returns:
+        Rendered template or redirection: 
+        For a GET request, it returns the 'forgot.html' template to collect the user's email.
+        For a POST request, it either redirects the user to the 'thanks' page with source as '/user/password' or 
+        returns the 'forgot.html' template with appropriate flash messages based on the scenario.
+    """
+
+    form = AddUserForm()
+
+    if request.method == "POST":
+        key = 'reset_last_call'
+
+        if key in session: 
+            
+            if time() < session[key] + 300:
+                flash('Please check your spam folder, or wait 5 minutes to try again.', 'danger')
+                return render_template('/users/forgot.html', form=form)
+
+        email = request.form['email']
+
+        if User.query.filter_by(email=email).first():
+
+            send_reset_email(mail, app, email)
+            flash("Reset email sent.", "info")
+            session[key] = time()
+            
+            return redirect(url_for('thanks', source='/user/password'))
+        
+        else:
+            flash('E-mail does not match the information we have.')
+            return render_template('/users/forgot.html', form=form)
+
+    return render_template('/users/forgot.html', form=form)
+
+@app.route('/user/password/<token>', methods=["GET", "POST"])
+def password_reset(token):
+    """
+    Handle user password reset via confirmation token.
+
+    This function handles both GET and POST requests to the '/user/password/reset/<token>' route.
+
+    It receives a unique token that was sent to the user's email address.
+
+    For a GET request, it attempts to confirm the token and fetch the user with the email address from the token. 
+    If the token is invalid or expired, it flashes a corresponding message and redirects the user to the 'password_email' 
+    route. If the token is valid, it renders the password reset form.
+
+    For a POST request, it validates the form and if valid, it updates the user's password in the database, logs the 
+    user in, flashes a success message, and redirects the user to the homepage. If the form is not valid, it flashes a 
+    warning message and re-renders the form.
+
+    Args:
+        token (str): The password reset token that was sent to the user's email.
+
+    Returns:
+        Rendered template or redirection: Based on the validation of the token, it either redirects the user to 
+        the appropriate route or returns the 'reset.html' template. For a POST request, it either redirects the user 
+        to the homepage or returns the 'reset.html' template with appropriate flash messages based on the form validation.
+    """
+
+    try:
+        email = confirm_token(app, token)
+
+    except:
+        flash('The reset link is invalid or has expired.', 'danger')
+        return redirect(url_for('password_email'))
+    
+    if not email:
+        flash('The reset link is invalid or has expired.', 'danger')
+        return redirect(url_for('password_email'))
+
+    user = User.query.filter_by(email=email).first_or_404()
+    form = ResetPasswordForm()
+    
+    if request.method == "POST" and user:
+        if form.validate_on_submit():
+            
+            hashed_pwd = User.bcrypt.generate_password_hash(form.password.data).decode('UTF-8')
+            user.password = hashed_pwd
+            db.session.commit()
+            login_user(user)
+            flash('Your password has been updated!', 'info')
+
+            return redirect(url_for('homepage'))
+            
+    return render_template('/users/reset.html', form=form)
 
 @app.route('/user/<int:id>')
 @login_required

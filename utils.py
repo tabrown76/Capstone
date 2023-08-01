@@ -50,6 +50,26 @@ def send_confirmation_email(mail, app, email):
     msg = Message(subject, recipients=[email], html=html)
     mail.send(msg)
 
+def send_reset_email(mail, app, email):
+    """
+    Send a password reset email to a user.
+
+    This function generates a reset token and URL, then composes an email message with the 
+    reset URL and sends it to the provided email address.
+
+    Args:
+        mail (Mail object): A Flask-Mail instance for sending emails.
+        app (Flask application): The current Flask application.
+        email (str): The email address to send the confirmation email to.
+    """
+
+    token = generate_confirmation_token(app, email)
+    reset_url = url_for('password_reset', token=token, _external=True)
+    html = render_template('/users/activate.html', reset_url=reset_url)
+    subject = "A password reset was requested."
+    msg = Message(subject, recipients=[email], html=html)
+    mail.send(msg)
+
 def generate_confirmation_token(app, email):
     """
     Generate an email confirmation token.

@@ -289,3 +289,22 @@ class EditStoryForm(FlaskForm):
     title = StringField('Title', validators=[DataRequired(),
                                              Length(min=2, max=50)])
     img_url = StringField('(Optional) Cover Image URL')
+
+class ResetPasswordForm(FlaskForm):
+    """
+    Form to reset passwords.
+
+    This form contains fields to set and confirm the password. Validators are used to ensure 
+    that both fields meet the specified requirements.
+
+    Fields:
+        password (PasswordField): Field for the password. This field is required and its length must be at least 8 characters.
+        confirm (PasswordField): Field for the confirmation of the user's password. This field is required.
+
+    """
+
+    password = PasswordField('Password', validators=[DataRequired(), 
+                                                     Length(min=8, message="Password must be at least 8 characters."),
+                                                     EqualTo('confirm', message="Passwords must match."),
+                                                     ComplexPassword()])
+    confirm = PasswordField('Confirm Password', validators=[DataRequired()])

@@ -1,7 +1,13 @@
 {% extends 'base.html' %}
 
 {% block content %}
+{% if source == '/user/password' %}
+<h3>Please check your e-mail.</h3>
+<h6>If you don't see it, check your spam folder.</h6>
+<hr>
+{% else %}
 <h3>Thanks for registering!</h3>
 <h6>Enjoy your CYO AI-ventures!</h6>
 <hr>
+{% endif %}
 {% endblock %}

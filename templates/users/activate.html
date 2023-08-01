@@ -1,8 +1,16 @@
 {% block content %}
 <h3>Click Below</h3>
+{% if confirm_url %}
 <div class="row"><h4>...to confirm your e-mail.</h4></div>
 <hr>
 <div class="row">
     <a href="{{confirm_url}}">Confirm Email</a>
 </div>
+{% else %}
+<div class="row"><h4>...to reset your password.</h4></div>
+<hr>
+<div class="row">
+    <a href="{{reset_url}}">Reset</a>
+</div>
+{% endif %}
 {% endblock %}
