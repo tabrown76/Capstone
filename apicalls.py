@@ -30,9 +30,9 @@ def make_api_request(selected_genres, selected_characters):
     response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
         messages=[
-            {"role": "system", "content": "You are a storyteller, creating a formatted choose your own adventure story, rated no higher than PG-13, with the genres of {} and the characters of {}.".format(genres, characters)},
+            {"role": "system", "content": "You are a storyteller, creating a formatted choose your own adventure story, rated no higher than PG-13, with the genres of {} and the characters of {}. Do not end the story; provide 2 choices.".format(genres, characters)},
             {"role": "system", "content": "Use these exact tags to separate story parts. [title]generate a short title, [start_content] generate a 400-500 word story, [choice_text] generate first short choice, [choice_text] generate second short choice"},
-            {"role": "system", "content": "After providing choices, stop the story; do not simulate making a choice. Include all tags; do not include extra tags. Do not include choices unless preceeded by tag. All tags lower-case."}
+            {"role": "system", "content": "After providing choices, stop the story; do not simulate making a choice. Include all tags; do not include extra tags. Do not include choices unless preceeded by [choice_text] tag. Do not use the word 'Choice' or 'Option' in lieu of [choice_text]. All tags lower-case."}
         ]
     )
 
@@ -92,7 +92,7 @@ def next_step(id, new_choice):
             {"role": "system", "content": "You are a storyteller, continuing a formatted choose your own adventure story, rated no higher than PG-13. The story should be long and engaging, not ending after a single branch."},
             {"role": "user", "content": story.start_content + " " + choice.choice_text},
             {"role": "system", "content": "Use these exact tags to separate story parts. [start_content] generate a 400-500 word story, [choice_text] generate first short choice, [choice_text] generate second short choice. Only if the story ends, use [end_content]."},
-            {"role": "system", "content": "After providing new choices, stop the story; do not simulate making a choice. Do not repeat anything from prompt. Include all tags; do not include extra tags. Do not include choices unless preceeded by tag. All tags lower-case."}
+            {"role": "system", "content": "After providing new choices, stop the story; do not simulate making a choice. Do not repeat anything from prompt. Include all tags; do not include extra tags. Do not include choices unless preceeded by [choice_text] tag. Do not use the word 'Choice' or 'Option' in lieu of [choice_text]. All tags lower-case."}
         ]
     )
 
