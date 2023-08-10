@@ -1,6 +1,6 @@
 https://platform.openai.com/docs/introduction
 
-Capstone Project
+CYO AI-venture!
 
 This project, a web application built with the Flask framework, incorporates the OpenAI API to provide powerful AI functionalities.
 
